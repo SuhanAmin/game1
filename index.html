@@ -222,19 +222,28 @@ function gameLoop() {
 
 /* DESKTOP CONTROLS */
 document.addEventListener("keydown", () => {
-  if (!playing) reset();
+  if (!playing)  {
+    reset();
+    gameLoop();
+  }
   flap();
 });
 
 document.addEventListener("mousedown", () => {
-  if (!playing) reset();
+  if (!playing) {
+    reset();
+    gameLoop();
+  }
   flap();
 });
 
 /* MOBILE CONTROLS */
 document.addEventListener("touchstart", (e) => {
   e.preventDefault();
-  if (!playing) reset();
+  if (!playing) {
+    reset();
+    gameLoop();
+  }
   flap();
 }, { passive: false });
 
