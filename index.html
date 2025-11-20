@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Flappy Bird DOM Version</title>
+
+  <!-- IMPORTANT FOR PHONES -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin:0;
+      background:#70c5ce;
+      overflow:hidden;
+      font-family:Arial;
+      user-select:none;
+      touch-action:none;
+    }
+
+    #game {
+      position:relative;
+      width:100%;
+      max-width:420px;
+      height:600px;
+      background:#70c5ce;
+      margin:auto;
+      overflow:hidden;
+      border:3px solid #000;
+    }
+
+    .bird {
+      position:absolute;
+      width:80px;
+      height:50px;
+
+      background-image: url("sam.jpg");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+
+      border-radius:50%;
+      top:250px;
+      left:60px;
+      transition: transform .1s;
+    }
+
+    .pipe {
+      position:absolute;
+      width:60px;
+      background:green;
+    }
+
+    .coin {
+      position:absolute;
+      width:50px;
+      height:50px;
+      background-image: url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRjVb2JjojHcFamTRP-1_Ofg0jREE0xvrIEhw&s");
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius:50%;
+      box-shadow:0 0 6px rgba(0,0,0,0.4);
+    }
+
+    #scoreBox {
+      text-align:center;
+      margin-top:10px;
+      font-size:20px;
+      font-weight:bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="scoreBox">Score: <span id="score">0</span> | Coins: <span id="coins">0</span></div>
+
+<div id="game">
+  <div id="bird" class="bird"></div>
+</div>
+
+<script>
+/* DOM ELEMENTS */
+const game = document.getElementById("game");
+const bird = document.getElementById("bird");
+const scoreBox = document.getElementById("score");
+const coinBox = document.getElementById("coins");
+
+/* SOUND */
+const sound = new Audio("sam.mp3");
+
+/* GAME VARIABLES */
+let birdY = 250;
+let velocity = 0;
+let gravity = 0.35;
+let playing = false;
+let score = 0;
+let coins = 0;
+let pipes = [];
+let coinList = [];
+
+/* RESET GAME */
+function reset() {
+  birdY = 250;
+  velocity = 0;
+  playing = true;
+  score = 0;
+  coins = 0;
+
+  pipes.forEach(p => p.remove());
+  coinList.forEach(c => c.remove());
+  pipes = [];
+  coinList = [];
+}
+
+/* FLAP */
+function flap() {
+  velocity = -7;
+}
+
+/* SPAWN PIPE & COIN */
+function spawnPipe() {
+  const gap = 140;
+  const topHeight = Math.random() * 250 + 30;
+
+  const pipeTop = document.createElement("div");
+  pipeTop.className = "pipe";
+  pipeTop.style.height = topHeight + "px";
+  pipeTop.style.top = "0px";
+  pipeTop.style.left = "420px";
+  game.appendChild(pipeTop);
+
+  const pipeBottom = document.createElement("div");
+  pipeBottom.className = "pipe";
+  pipeBottom.style.height = (500 - topHeight - gap) + "px";
+  pipeBottom.style.bottom = "0px";
+  pipeBottom.style.left = "420px";
+  pipeBottom.style.position = "absolute";
+  game.appendChild(pipeBottom);
+
+  const coin = document.createElement("div");
+  coin.className = "coin";
+  coin.style.left = "450px";
+  coin.style.top = (topHeight + gap / 2) + "px";
+  game.appendChild(coin);
+
+  pipes.push(pipeTop, pipeBottom);
+  coinList.push(coin);
+}
+
+/* COLLISION CHECK */
+function rectCollision(a, b) {
+  const ar = a.getBoundingClientRect();
+  const br = b.getBoundingClientRect();
+  return !(
+    ar.right < br.left ||
+    ar.left > br.right ||
+    ar.bottom < br.top ||
+    ar.top > br.bottom
+  );
+}
+
+/* GAME LOOP */
+function gameLoop() {
+  if (!playing) return;
+
+  velocity += gravity;
+  birdY += velocity;
+  bird.style.top = birdY + "px";
+
+  if (birdY > 570) {
+    playing = false;
+    alert("Game Over! Score: " + score + " Coins: " + coins);
+    return;
+  }
+
+  pipes.forEach((p, i) => {
+    let x = parseInt(p.style.left);
+    x -= 3;
+    p.style.left = x + "px";
+
+    if (x < -60) {
+      p.remove();
+      pipes.splice(i, 1);
+    }
+
+    if (rectCollision(bird, p)) {
+      playing = false;
+      alert("Game Over! Score: " + score + " Coins: " + coins);
+      return;
+    }
+  });
+
+  coinList.forEach((c, i) => {
+    let x = parseInt(c.style.left);
+    x -= 3;
+    c.style.left = x + "px";
+
+    if (x < -30) {
+      c.remove();
+      coinList.splice(i, 1);
+    }
+
+    if (rectCollision(bird, c)) {
+      coins++;
+      coinBox.textContent = coins;
+
+      sound.currentTime = 0;
+      sound.play();
+
+      c.remove();
+      coinList.splice(i, 1);
+    }
+  });
+
+  score++;
+  scoreBox.textContent = score;
+
+  if (score % 120 === 0) spawnPipe();
+
+  requestAnimationFrame(gameLoop);
+}
+
+/* DESKTOP CONTROLS */
+document.addEventListener("keydown", () => {
+  if (!playing) reset();
+  flap();
+});
+
+document.addEventListener("mousedown", () => {
+  if (!playing) reset();
+  flap();
+});
+
+/* MOBILE CONTROLS */
+document.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  if (!playing) reset();
+  flap();
+}, { passive: false });
+
+/* START GAME */
+reset();
+gameLoop();
+</script>
+
+</body>
+</html>
